@@ -65,7 +65,7 @@ export const updateThread = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const patch: Record<string, string> = {};
+    const patch: { title?: string; model?: string } = {};
     if (data.title) patch.title = data.title;
     if (data.model) patch.model = data.model;
     const { error } = await context.supabase
