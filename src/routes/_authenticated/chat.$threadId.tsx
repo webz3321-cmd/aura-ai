@@ -8,7 +8,6 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { getThread, updateThread } from "@/lib/threads.functions";
 import { AVAILABLE_MODELS } from "@/lib/ai-gateway.server";
 import { supabase } from "@/integrations/supabase/client";
@@ -181,7 +180,7 @@ function ChatWindow({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1" viewportRef={scrollRef as React.RefObject<HTMLDivElement>}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 md:px-6">
           {messages.length === 0 && (
             <div className="py-20 text-center text-muted-foreground">
@@ -204,7 +203,7 @@ function ChatWindow({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Composer */}
       <div className="border-t border-border/50 bg-background/60 p-4 backdrop-blur md:p-6">
