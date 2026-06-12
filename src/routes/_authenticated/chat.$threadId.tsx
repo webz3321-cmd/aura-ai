@@ -168,7 +168,12 @@ function ChatWindow({
     const text = input.trim();
     if ((!text && attachments.length === 0) || isBusy) return;
     setInput("");
-    const files = attachments.length ? attachments : undefined;
+    let files: FileList | undefined;
+    if (attachments.length) {
+      const dt = new DataTransfer();
+      attachments.forEach((f) => dt.items.add(f));
+      files = dt.files;
+    }
     setAttachments([]);
     sendMessage({ text, files });
   }
