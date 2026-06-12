@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { getModeSystemPrompt } from "@/lib/chat-modes";
 
 type ChatRequestBody = {
   messages?: unknown;
   model?: unknown;
   threadId?: unknown;
+  mode?: unknown;
 };
 
 export const Route = createFileRoute("/api/chat")({
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/api/chat")({
         }
         const token = authHeader.slice(7);
 
-        const { messages, model, threadId } = (await request.json()) as ChatRequestBody;
+        const { messages, model, threadId, mode } = (await request.json()) as ChatRequestBody;
         if (!Array.isArray(messages)) {
           return new Response("messages required", { status: 400 });
         }
@@ -46,8 +48,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const result = streamText({
           model: gateway(modelId),
-          system:
-            "You are a helpful, knowledgeable AI assistant. Respond clearly using markdown when useful. Be concise but thorough.",
+          system: getModeSystemPrompt(typeof mode === "string" ? mode : undefined),
           messages: await convertToModelMessages(messages as UIMessage[]),
         });
 
