@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getThread, updateThread } from "@/lib/threads.functions";
 import { AVAILABLE_MODELS } from "@/lib/ai-gateway.server";
+import { CHAT_MODES, type ChatMode } from "@/lib/chat-modes";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUp, Sparkles, Loader2, User } from "lucide-react";
+import { ArrowUp, Sparkles, Loader2, User, Paperclip, Mic, MicOff, X, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
