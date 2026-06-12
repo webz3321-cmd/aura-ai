@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import aouraLogo from "@/assets/aoura-logo.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Nebula AI" },
-      { name: "description", content: "Sign in or create your Nebula AI account." },
+      { title: "Sign in — Aoura AI by Webz" },
+      { name: "description", content: "Sign in or create your Aoura AI account." },
     ],
   }),
   component: AuthPage,
@@ -81,10 +82,8 @@ function AuthPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-brand shadow-glow">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="text-xl font-semibold tracking-tight">Nebula</span>
+          <img src={aouraLogo} alt="Aoura AI" width={36} height={36} className="h-9 w-9" />
+          <span className="text-xl font-semibold tracking-tight">Aoura <span className="text-muted-foreground font-normal text-base">by Webz</span></span>
         </Link>
 
         <div className="glass rounded-3xl p-8 shadow-glow">

@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { listThreads, createThread, deleteThread } from "@/lib/threads.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/components/theme-provider";
-import { Sparkles, Plus, Trash2, MessageSquare, LogOut, Moon, Sun, Menu, X } from "lucide-react";
+import { Plus, Trash2, MessageSquare, LogOut, Moon, Sun, Menu, X } from "lucide-react";
+import aouraLogo from "@/assets/aoura-logo.png";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -69,10 +70,8 @@ function ChatLayout() {
       >
         <div className="flex items-center justify-between p-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-brand shadow-glow">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-base font-semibold tracking-tight">Nebula</span>
+            <img src={aouraLogo} alt="Aoura AI" width={32} height={32} className="h-8 w-8" />
+            <span className="text-base font-semibold tracking-tight">Aoura</span>
           </Link>
           <Button size="icon" variant="ghost" className="md:hidden" onClick={() => setSidebarOpen(false)}>
             <X className="h-4 w-4" />
@@ -144,7 +143,7 @@ function ChatLayout() {
           <Button size="icon" variant="ghost" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-4 w-4" />
           </Button>
-          <span className="font-semibold">Nebula</span>
+          <span className="font-semibold">Aoura</span>
         </div>
         <Outlet />
       </main>
