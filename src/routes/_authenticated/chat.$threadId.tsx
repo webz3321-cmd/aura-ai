@@ -416,6 +416,25 @@ function MessageBubble({ message }: { message: UIMessage }) {
         )}
       >
         {message.parts.map((part, i) => {
+          if (part.type === "file") {
+            const fp = part as { type: "file"; mediaType?: string; url?: string; filename?: string };
+            if (fp.mediaType?.startsWith("image/") && fp.url) {
+              return (
+                <img
+                  key={i}
+                  src={fp.url}
+                  alt={fp.filename ?? "attachment"}
+                  className="my-1 max-h-64 rounded-lg border border-border/50"
+                />
+              );
+            }
+            return (
+              <div key={i} className="my-1 inline-flex items-center gap-2 rounded-lg border border-border/50 bg-background/40 px-2.5 py-1.5 text-xs">
+                <FileText className="h-3.5 w-3.5" />
+                <span className="truncate">{fp.filename ?? "Attachment"}</span>
+              </div>
+            );
+          }
           if (part.type !== "text") return null;
           return isUser ? (
             <p key={i} className="whitespace-pre-wrap">{part.text}</p>
