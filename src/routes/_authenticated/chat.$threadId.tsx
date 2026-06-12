@@ -47,6 +47,8 @@ function ThreadPage() {
     if (data?.thread?.model) setModel(data.thread.model);
   }, [data?.thread?.model]);
 
+  const [mode, setMode] = useState<ChatMode>("default");
+
   return isLoading ? (
     <div className="flex flex-1 items-center justify-center">
       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -57,6 +59,8 @@ function ThreadPage() {
       threadId={threadId}
       initialMessages={initialMessages}
       model={model}
+      mode={mode}
+      onModeChange={setMode}
       onModelChange={async (m) => {
         setModel(m);
         await updateFn({ data: { threadId, model: m } });
@@ -77,6 +81,8 @@ function ChatWindow({
   initialMessages,
   model,
   onModelChange,
+  mode,
+  onModeChange,
   title,
   onTitleAutoset,
 }: {
@@ -84,6 +90,8 @@ function ChatWindow({
   initialMessages: UIMessage[];
   model: string;
   onModelChange: (m: string) => void;
+  mode: ChatMode;
+  onModeChange: (m: ChatMode) => void;
   title: string;
   onTitleAutoset: (t: string) => void;
 }) {
@@ -103,13 +111,14 @@ function ChatWindow({
               const parsed = JSON.parse(body);
               parsed.model = model;
               parsed.threadId = threadId;
+              parsed.mode = mode;
               body = JSON.stringify(parsed);
             } catch {}
           }
           return fetch(url, { ...init, body, headers });
         },
       }),
-    [model, threadId],
+    [model, threadId, mode],
   );
 
   const { messages, sendMessage, status, error } = useChat({
