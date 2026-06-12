@@ -129,8 +129,12 @@ function ChatWindow({
   });
 
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [listening, setListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<unknown>(null);
   const titleSetRef = useRef(false);
 
   useEffect(() => {
@@ -162,9 +166,70 @@ function ChatWindow({
 
   function submit() {
     const text = input.trim();
-    if (!text || isBusy) return;
+    if ((!text && attachments.length === 0) || isBusy) return;
     setInput("");
-    sendMessage({ text });
+    const files = attachments.length ? attachments : undefined;
+    setAttachments([]);
+    sendMessage({ text, files });
+  }
+
+  function handleFiles(list: FileList | null) {
+    if (!list) return;
+    const accepted: File[] = [];
+    for (const f of Array.from(list)) {
+      if (f.size > 20 * 1024 * 1024) {
+        toast.error(`${f.name} is over 20MB`);
+        continue;
+      }
+      const isImage = f.type.startsWith("image/");
+      const isPdf = f.type === "application/pdf";
+      if (!isImage && !isPdf) {
+        toast.error(`${f.name}: only images and PDFs are supported right now`);
+        continue;
+      }
+      accepted.push(f);
+    }
+    if (accepted.length) setAttachments((prev) => [...prev, ...accepted]);
+  }
+
+  function toggleVoice() {
+    type SR = {
+      new (): {
+        lang: string;
+        continuous: boolean;
+        interimResults: boolean;
+        start: () => void;
+        stop: () => void;
+        onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+        onerror: (() => void) | null;
+        onend: (() => void) | null;
+      };
+    };
+    const w = window as unknown as { SpeechRecognition?: SR; webkitSpeechRecognition?: SR };
+    const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    if (!Ctor) {
+      toast.error("Voice input isn't supported in this browser");
+      return;
+    }
+    if (listening) {
+      (recognitionRef.current as { stop: () => void } | null)?.stop();
+      setListening(false);
+      return;
+    }
+    const rec = new Ctor();
+    rec.lang = "en-US";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      let transcript = "";
+      for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript;
+      setInput(transcript);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setListening(true);
   }
 
   return (
@@ -174,19 +239,39 @@ function ChatWindow({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-medium">{title}</h2>
         </div>
-        <Select value={model} onValueChange={onModelChange}>
-          <SelectTrigger className="w-[200px] glass">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {AVAILABLE_MODELS.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                <span className="text-xs text-muted-foreground">{m.provider}</span>
-                <span className="ml-2">{m.label}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Select value={mode} onValueChange={(v) => onModeChange(v as ChatMode)}>
+            <SelectTrigger className="w-[160px] glass">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CHAT_MODES.map((m) => {
+                const Icon = m.icon;
+                return (
+                  <SelectItem key={m.id} value={m.id}>
+                    <span className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5" />
+                      {m.label}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Select value={model} onValueChange={onModelChange}>
+            <SelectTrigger className="w-[200px] glass">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AVAILABLE_MODELS.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  <span className="text-xs text-muted-foreground">{m.provider}</span>
+                  <span className="ml-2">{m.label}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Messages */}
@@ -218,7 +303,59 @@ function ChatWindow({
       {/* Composer */}
       <div className="border-t border-border/50 bg-background/60 p-4 backdrop-blur md:p-6">
         <div className="mx-auto max-w-3xl">
+          {attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {attachments.map((f, i) => (
+                <div key={i} className="glass flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs">
+                  {f.type.startsWith("image/") ? (
+                    <ImageIcon className="h-3.5 w-3.5" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5" />
+                  )}
+                  <span className="max-w-[160px] truncate">{f.name}</span>
+                  <button
+                    onClick={() => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Remove"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="glass relative flex items-end gap-2 rounded-2xl p-2 shadow-glow">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={(e) => {
+                handleFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Attach image or PDF"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className={cn("shrink-0", listening && "text-destructive")}
+              onClick={toggleVoice}
+              aria-label={listening ? "Stop voice input" : "Start voice input"}
+            >
+              {listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            </Button>
             <Textarea
               ref={textareaRef}
               value={input}
@@ -229,13 +366,13 @@ function ChatWindow({
                   submit();
                 }
               }}
-              placeholder="Ask anything…"
+              placeholder={listening ? "Listening…" : "Ask anything — drop in images or PDFs"}
               rows={1}
               className="min-h-[44px] resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
             />
             <Button
               onClick={submit}
-              disabled={!input.trim() || isBusy}
+              disabled={(!input.trim() && attachments.length === 0) || isBusy}
               size="icon"
               className="shrink-0 bg-gradient-brand text-white hover:opacity-90"
             >
@@ -243,7 +380,7 @@ function ChatWindow({
             </Button>
           </div>
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            Press Enter to send · Shift+Enter for newline
+            Enter to send · Shift+Enter for newline · Attach images/PDFs · 🎙️ for voice
           </p>
         </div>
       </div>
